@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.bjsxt.mapper.EmployeeMapper">
+  		<resultMap type="Employee" id="mymap">
+  			<id column="empId" property="empId"/>
+			<result column="empName" property="empName"/>
+			<result column="empEmail" property="empEmail"/>
+			<result column="gender" property="gender"/>
+			<association property="department" javaType="Department" >
+				<id column="deptId" property="deptId"/>
+				<result column="deptName" property="deptName"/>
+				<result column="deptLeader" property="deptLeader"/>
+			</association>
+  		</resultMap>
+  		<select id="selAllWithDept" resultMap="mymap">
+  			select e.emp_id empId, e.emp_name empName, e.emp_email empEmail, gender, d.dept_id deptId, d.dept_name deptName, d.dept_leader deptLeader from tbl_emp e LEFT JOIN tbl_dept d on e.department_id=d.dept_id
+  		</select>
+
+  </mapper>

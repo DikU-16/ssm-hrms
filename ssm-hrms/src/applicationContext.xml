@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd" default-autowire="byName">
+    <!-- 扫描组件,扫描注解 -->
+    <context:component-scan base-package="com.bjsxt.service.impl"></context:component-scan>
+    <!-- 加载属性文件 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+    <!-- 数据源 -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    	<property name="driverClassName" value="${jdbc.driver}"></property>
+    	<property name="url" value="${jdbc.url}"></property>
+    	<property name="username" value="${jdbc.username}"></property>
+    	<property name="password" value="${jdbc.password}"></property>
+    </bean>
+    <!-- 创建SqlSessionFactory -->
+    <bean id="factory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource"></property><!--上面写了default-autowire="byName"自动注入就不需要加这句话  -->
+    	<property name="typeAliasesPackage" value="com.bjsxt.pojo"></property><!-- 起别名 -->
+    	
+    	 <!--mybatis中的分页插件  -->
+          <property name="plugins">
+            <list>
+              <bean id="pg" class="com.github.pagehelper.PageHelper">
+                 <property name="properties">
+                   <props>
+                      <prop key="dialect">mysql</prop>
+                      <prop key="pageSizeZero">true</prop>
+                      <prop key="reasonable">true</prop>
+                   </props>
+                 </property>
+               </bean>
+             </list>
+           </property>
+    </bean>
+    <!-- 扫描器 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    	<property name="basePackage" value="com.bjsxt.mapper"></property>
+    	<!-- 如果不使用这个属性会调用属性文件加载不到 -->
+    	<property name="sqlSessionFactoryBeanName" value="factory"></property>
+    </bean>
+    <!-- 配置事务管理器 -->
+    <bean id="txManage" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    	<property name="dataSource" ref="dataSource"></property><!--上面写了default-autowire="byName"自动注入就不需要加这句话  -->
+    </bean> 
+    <!-- 配置声明式事务 -->
+    <tx:advice id="txAdvice" transaction-manager="txManage">
+    	<tx:attributes>
+    		<tx:method name="ins*"/>
+    		<tx:method name="del*"/>
+    		<tx:method name="upd*"/>
+    		<tx:method name="*" read-only="true"/>
+    	</tx:attributes>
+    </tx:advice>
+    <!-- 配置aop -->
+    <aop:config>
+    	<aop:pointcut expression="execution(* com.bjsxt.service.impl.*.*(..))" id="mypoint"/>
+    	<aop:advisor advice-ref="txAdvice" pointcut-ref="mypoint"/>
+    </aop:config>
+    
+    <!--配置Aop切面  -->
+       
+       <bean id="after" class="com.bjsxt.advice.AfterAdvice"></bean>
+       <bean id="before" class="com.bjsxt.advice.BeforeAdvice"></bean>
+       <aop:config>
+          <aop:pointcut expression="execution(* com.bjsxt.service.UsersService.login(..))" id="pt2"/>
+          
+          <aop:advisor advice-ref="before" pointcut-ref="pt2"/>
+          <aop:advisor advice-ref="after" pointcut-ref="pt2"/>
+       </aop:config>
+       
+    
+</beans>
